@@ -109,7 +109,7 @@ qqq = do
 --      </body>
 --     </html>
 --
--- nn :: ServerPartT IO XML
+-- nn :: ServerPartT IO String
 -- nn = undefined
 
 about :: XMLGenT (URLT SiteURL (ServerPartT IO)) XML
