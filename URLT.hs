@@ -60,6 +60,7 @@ mySite (MyBlog (BlogPost x)) = unXMLGenT (blog x >>= page) >>= makeResponse
 
 makeResponse = ok . setHeader "Content-Type" "text/html" . toResponse . renderAsHTML
 
+-- ISSUE_1: Should one include this in HSX?
 instance (EmbedAsAttr m (Attr String c), TypeCastM m1 m) => EmbedAsAttr m (Attr String (XMLGenT m1 c)) where
     asAttr (n := (XMLGenT m1a)) = do
             a <- XMLGenT $ typeCastM m1a
@@ -84,7 +85,17 @@ qqq = do
     x <- showURL (MyBlog $ BlogPost "hello-world")
     return x
 
--- FIXME: Why or why this doesn't work???
+-- ISSUE_2: Why or why this doesn't typecheck???
+--
+-- Error message is:
+-- Prelude> :lo URLT.hs 
+-- [1 of 1] Compiling Main             ( URLT.hs, interpreted )
+--
+-- URLT.hs:1:0:
+--     Couldn't match expected type `ServerPartT IO XML'
+--                against inferred type `HSP.ServerPartT.R:XMLServerPartT IO'
+--                Failed, modules loaded: none.
+--
 -- page' :: XMLGenT (ServerPartT IO) XML
 -- page' = 
 --     <html>
@@ -94,10 +105,10 @@ qqq = do
 --      <body>
 --       <p>Hello there</p>
 --       <% nn %>
-      -- <a href=(n)>Blog</a>
+--       <a href=(nn)>Blog</a>
 --      </body>
 --     </html>
-
+--
 -- nn :: ServerPartT IO XML
 -- nn = undefined
 
@@ -107,4 +118,5 @@ about = <div>When you worry call me, i make you happy.</div>
 blog :: String -> XMLGenT (URLT SiteURL (ServerPartT IO)) XML
 blog what = <div>This is kinda blog post about <% what %></div>
 
+-- ISSUE_3: What about GET/POST parsing in URLT style?
 
