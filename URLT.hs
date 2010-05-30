@@ -85,32 +85,21 @@ qqq = do
     x <- showURL (MyBlog $ BlogPost "hello-world")
     return x
 
--- ISSUE_2: Why or why this doesn't typecheck???
---
--- Error message is:
--- Prelude> :lo URLT.hs 
--- [1 of 1] Compiling Main             ( URLT.hs, interpreted )
---
--- URLT.hs:1:0:
---     Couldn't match expected type `ServerPartT IO XML'
---                against inferred type `HSP.ServerPartT.R:XMLServerPartT IO'
---                Failed, modules loaded: none.
---
--- page' :: XMLGenT (ServerPartT IO) XML
--- page' = 
---     <html>
---      <head>
---       <title>Holy Homepage</title>
---      </head>
---      <body>
---       <p>Hello there</p>
---       <% nn %>
---       <a href=(nn)>Blog</a>
---      </body>
---     </html>
---
--- nn :: ServerPartT IO String
--- nn = undefined
+page' :: XMLGenT (ServerPartT IO) XML
+page' = 
+    <html>
+     <head>
+      <title>Holy Homepage</title>
+     </head>
+     <body>
+      <p>Hello there</p>
+      <% nn %>
+      <a href=(nn)>Blog</a>
+     </body>
+    </html>
+
+nn :: XMLGenT (ServerPartT IO) String
+nn = undefined
 
 about :: XMLGenT (URLT SiteURL (ServerPartT IO)) XML
 about = <div>When you worry call me, i make you happy.</div>
