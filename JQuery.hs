@@ -19,6 +19,10 @@ handlerMap = do
 
 makeResponse = ok . setHeader "Content-Type" "text/html" .  toResponse . renderAsHTML
 
+
+errMsg :: String
+errMsg = "As you can see, the link no longer took you to jquery.com"
+
 hello :: XMLGenT (ServerPartT IO) XML
 hello =
     <html lang="en">
@@ -28,7 +32,7 @@ hello =
         <script type="text/javascript">
             $(document).ready( function() {
                 $("a").click(function(event) {
-                    alert("As you can see, the link no longer took you to jquery.com");
+                    alert("<% errMsg %>");
                     event.preventDefault();
                     $("a").addClass("test");
                 });
@@ -39,7 +43,7 @@ hello =
         </style>
     </head>
     <body>
-        <a href="http://jquery.com/">jQuery</a>
+        <a href="http://jquery.com/">Click me</a>
     </body>
     </html>
 
