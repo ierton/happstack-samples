@@ -1,3 +1,6 @@
+-- Note: URLT module is deprecated. Use web-routes instead.
+-- Sergey Mironov
+
 {-# LANGUAGE TemplateHaskell, TypeFamilies, TypeSynonymInstances, EmptyDataDecls #-}
 {-# OPTIONS_GHC -F -pgmF trhsx #-}
 {-# LANGUAGE MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances, TypeFamilies, FlexibleContexts#-}
@@ -61,6 +64,7 @@ mySite (MyBlog (BlogPost x)) = unXMLGenT (blog x >>= page) >>= makeResponse
 makeResponse = ok . setHeader "Content-Type" "text/html" . toResponse . renderAsHTML
 
 -- ISSUE_1: Should one include this in HSX?
+-- One should. Willbe done. Remove me when it happens.
 instance (EmbedAsAttr m (Attr String c), TypeCastM m1 m) => EmbedAsAttr m (Attr String (XMLGenT m1 c)) where
     asAttr (n := (XMLGenT m1a)) = do
             a <- XMLGenT $ typeCastM m1a
@@ -68,6 +72,8 @@ instance (EmbedAsAttr m (Attr String c), TypeCastM m1 m) => EmbedAsAttr m (Attr 
 
 page :: XML -> XMLGenT (URLT SiteURL (ServerPartT IO)) XML
 page content =
+    let b1 = toBlog "hello-world" 
+        b2 = toBlog "cats" in
     <html>
      <head>
       <title>Holy Homepage</title>
@@ -75,16 +81,27 @@ page content =
      <body>
       <p>Hello there</p>
       <% content %>
-      <% qqq %>
-       <a href=(qqq)>Blog</a>
+      <hr/>
+      End of content <br/>
+      Next link should bring you on: <% b1 %> <br/>
+      <a href=(b1)>A link</a> <br/>
+      And this - on <%b2%> <br/>
+      <a href=(b2)>Another link</a> <br/>
      </body>
     </html>
 
-qqq :: XMLGenT (URLT SiteURL (ServerPartT IO)) String
-qqq = do
-    x <- showURL (MyBlog $ BlogPost "hello-world")
+toBlog :: String -> XMLGenT (URLT SiteURL (ServerPartT IO)) String
+toBlog postname = do
+    x <- showURL (MyBlog $ BlogPost postname)
     return x
 
+about :: XMLGenT (URLT SiteURL (ServerPartT IO)) XML
+about = <div>When you worry call me, i make you happy.</div>
+
+blog :: String -> XMLGenT (URLT SiteURL (ServerPartT IO)) XML
+blog what = <div>This is kinda blog post about <% what %></div>
+
+-- Just an example of another monad. Never called.
 page' :: XMLGenT (ServerPartT IO) XML
 page' = 
     <html>
@@ -100,12 +117,3 @@ page' =
 
 nn :: XMLGenT (ServerPartT IO) String
 nn = undefined
-
-about :: XMLGenT (URLT SiteURL (ServerPartT IO)) XML
-about = <div>When you worry call me, i make you happy.</div>
-
-blog :: String -> XMLGenT (URLT SiteURL (ServerPartT IO)) XML
-blog what = <div>This is kinda blog post about <% what %></div>
-
--- ISSUE_3: What about GET/POST parsing in URLT style?
-
