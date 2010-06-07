@@ -26,13 +26,13 @@ makeResponse = ok . setHeader "Content-Type" "text/html" .
 
 
 instance EmbedAsChild (ServerPartT IO) (HJScript ()) where
-  asChild script = asChild . snd $ evalHJScript script
+    asChild script = asChild . snd $ evalHJScript script
 
 instance EmbedAsChild (ServerPartT IO) (Block t) where
-  asChild b = asChild $
-    <script type="text/javascript">
-      <% show b %>
-    </script>
+    asChild b = asChild $
+        <script type="text/javascript">
+            <% show b %>
+        </script>
 
 js = window # alert (string "an freaking alert box.")
 
