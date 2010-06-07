@@ -1,5 +1,5 @@
 -- Author: Sergey Mironov
--- See also http://www.ierton.ru
+-- See also http://blog.ierton.ru
 
 {-# OPTIONS_GHC -F -pgmF trhsx #-}
 
