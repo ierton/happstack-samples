@@ -51,7 +51,7 @@ handlerMap = do
 site :: Site SiteURL (ServerPartT IO Response)
 site = setDefault MyHome $ Site {
     handleSite = \f u -> runRouteT (mySite u) f, 
-    formatPathSegments = toPathSegments,
+    formatPathSegments = \url -> (toPathSegments url, []),
     parsePathSegments = parseSegments fromPathSegments
     }
 
