@@ -23,12 +23,14 @@ makeResponse = ok . setHeader "Content-Type" "text/html" .  toResponse . renderA
 errMsg :: String
 errMsg = "As you can see, the link no longer took you to jquery.com"
 
+urlTarget = "http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js"
+
 hello :: XMLGenT (ServerPartT IO) XML
 hello =
     <html lang="en">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js" type="text/javascript"></script>
+        <script src=(urlTarget) type="text/javascript"></script>
         <script type="text/javascript">
             $(document).ready( function() {
                 $("a").click(function(event) {
