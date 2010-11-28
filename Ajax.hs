@@ -22,7 +22,10 @@ main = do
 
 handlerMap :: ServerPartT IO Response
 handlerMap = msum [ 
-    dir "_ajax" $ renderAjax, 
+    dir "_ajax" $ msum [ 
+        dir "cell" $ ajaxCell , 
+        dir "test" $ ajaxTest 
+        ],
     renderHello ] 
 
 renderHello :: ServerPartT IO Response
@@ -30,9 +33,13 @@ renderHello = do
     xhello <- unXMLGenT hello
     makeResponse . renderAsHTML $ xhello
 
-renderAjax :: ServerPartT IO Response
-renderAjax = do
+ajaxTest :: ServerPartT IO Response
+ajaxTest = do
     makeResponse $ "bla-bla-bal"
+
+ajaxCell :: ServerPartT IO Response
+ajaxCell = do
+    makeResponse $ "#ffaaaa"
 
 makeResponse = ok . setHeader "Content-Type" "text/html" .  toResponse
 
@@ -45,14 +52,37 @@ hello =
         <script type="text/javascript">
             $(document).ready( function() {
                 $("#generate").click(function() {
-                   $("#quote").load("_ajax");
+                    $("#quote").load("_ajax/test/get");
                 });
-            });
+
+                $("td.mycell").css( "background-color", "#aaaaff" );
+
+                $("td.mycell").click(function() {
+                    var _this = this;
+                    $.get("_ajax/cell/get", function(x) {
+                        _this.style.backgroundColor = x;
+                        });
+                    });
+                });
         </script> 
     </head>
     <body>
         <input type="submit" id="generate" value="Generate!"/>
         <div id="quote"></div>
+
+        <% table 40 40 %>
     </body>
     </html>
+
+cell_id x y = (show x) ++ "-" ++ (show y)
+
+table :: Int -> Int -> XMLGenT (ServerPartT IO) XML
+table rows cols = <table border="0" cellspacing="0"> <% forM [0..rows-1] row %> </table>
+    where 
+        row y = 
+            <tr> <% forM [0..cols-1] $ \x -> cell x y %> 
+            </tr>
+        cell x y  = 
+            <td id=(cell_id x y) class="mycell" width="10" height="10"> 
+            </td>
 
