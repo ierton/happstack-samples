@@ -12,7 +12,7 @@ import Control.Monad.Maybe
 import System.Log.Logger
 
 -- Link to JQuery source
-jQuery = "http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js"
+jQuery = "_static/jquery-1.3.min.js"
 
 main :: IO ()
 main = do
@@ -22,11 +22,16 @@ main = do
 
 handlerMap :: ServerPartT IO Response
 handlerMap = msum [ 
+    dir "_static" $ uriRest staticFiles,
     dir "_ajax" $ msum [ 
-        dir "cell" $ ajaxCell , 
+        dir "cell" $ ajaxCell,
         dir "test" $ ajaxTest 
         ],
-    renderHello ] 
+    renderHello ]
+
+staticFiles :: String -> ServerPartT IO Response
+staticFiles p = do
+    serveFileUsing filePathLazy (guessContentTypeM mimeTypes) ('.' : p)
 
 renderHello :: ServerPartT IO Response
 renderHello = do
