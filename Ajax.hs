@@ -1,6 +1,13 @@
 
 {-# OPTIONS_GHC -F -pgmF trhsx #-}
 
+{-# OPTIONS_GHC
+ -XTemplateHaskell
+ -XFlexibleInstances
+ -XMultiParamTypeClasses
+ -XFlexibleContexts
+ -XUndecidableInstances #-}
+
 import Happstack.Server
 import HSP 
 import Data.Char
@@ -10,6 +17,16 @@ import Control.Monad.Trans
 import Control.Monad.Reader
 import Control.Monad.Maybe
 import System.Log.Logger
+import Text.RJson
+import Data.Generics.SYB.WithClass.Basics
+import Data.Generics.SYB.WithClass.Derive
+
+data AjaxPacket = AjaxPacket { 
+    item :: String, 
+    color :: String 
+    } deriving(Show)
+
+$(derive[''AjaxPacket])
 
 -- Link to JQuery source
 jQuery = "_static/jquery-1.3.min.js"
@@ -17,7 +34,7 @@ jQuery = "_static/jquery-1.3.min.js"
 main :: IO ()
 main = do
     updateGlobalLogger rootLoggerName (setLevel DEBUG)
-    let cfg = Conf { validator = Nothing, port = 3333 }
+    let cfg = Conf { validator = Nothing, port = 3333, logAccess = Nothing }
     simpleHTTP cfg handlerMap
 
 handlerMap :: ServerPartT IO Response
@@ -25,13 +42,17 @@ handlerMap = msum [
     dir "_static" $ uriRest staticFiles,
     dir "_ajax" $ msum [ 
         dir "cell" $ ajaxCell,
+        dir "json" $ ajaxJSON,
         dir "test" $ ajaxTest 
         ],
     renderHello ]
 
+myPolicy :: BodyPolicy
+myPolicy = (defaultBodyPolicy "/tmp/" 0 1000 1000)
+
 staticFiles :: String -> ServerPartT IO Response
 staticFiles p = do
-    serveFileUsing filePathLazy (guessContentTypeM mimeTypes) ('.' : p)
+    serveDirectory DisableBrowsing [] "."
 
 renderHello :: ServerPartT IO Response
 renderHello = do
@@ -45,6 +66,14 @@ ajaxTest = do
 ajaxCell :: ServerPartT IO Response
 ajaxCell = do
     makeResponse $ "#ffaaaa"
+
+
+samplePacket :: AjaxPacket 
+samplePacket = AjaxPacket ('#':(cell_id 3 3)) "#ffaaaa"
+
+ajaxJSON :: ServerPartT IO Response
+ajaxJSON = do
+    makeResponse $ toJsonString $ samplePacket
 
 makeResponse = ok . setHeader "Content-Type" "text/html" .  toResponse
 
@@ -62,12 +91,24 @@ hello =
 
                 $("td.mycell").css( "background-color", "#aaaaff" );
 
-                $("td.mycell").click(function() {
-                    var _this = this;
-                    $.get("_ajax/cell/get", function(x) {
-                        _this.style.backgroundColor = x;
-                        });
-                    });
+                function process(elem, x) {
+                    elem.style.backgroundColor = x;
+                }
+
+                function request(elem) {
+                    $.get("_ajax/cell/get", function(x) { process(elem, x); } );
+                }
+
+                function processJSON(x) {
+                    $(x.item).css("backgroundColor", x.color);
+                }
+
+                function requestJSON() {
+                    $.getJSON("_ajax/json/get", processJSON );
+                }
+
+                $("td.mycell").click( function() { requestJSON(); } );
+
                 });
         </script> 
     </head>
@@ -79,10 +120,13 @@ hello =
     </body>
     </html>
 
-cell_id x y = (show x) ++ "-" ++ (show y)
+cell_id x y = (show x) ++ "_" ++ (show y)
 
 table :: Int -> Int -> XMLGenT (ServerPartT IO) XML
-table rows cols = <table border="0" cellspacing="0"> <% forM [0..rows-1] row %> </table>
+table rows cols = 
+    <table border="0" cellspacing="0"> 
+        <% forM [0..rows-1] row %> 
+    </table>
     where 
         row y = 
             <tr> <% forM [0..cols-1] $ \x -> cell x y %> 
