@@ -20,29 +20,55 @@ import System.Log.Logger
 import Text.RJson
 import Data.Generics.SYB.WithClass.Basics
 import Data.Generics.SYB.WithClass.Derive
+import Control.Concurrent
+import System.Posix.Unistd
 
 data AjaxPacket = AjaxPacket { 
-    item :: String, 
+    x :: Int,
+    y :: Int, 
     color :: String 
     } deriving(Show)
 
 $(derive[''AjaxPacket])
 
+samplePacket :: AjaxPacket 
+samplePacket = AjaxPacket 3 3 "#ffaaaa"
+
 -- Link to JQuery source
 jQuery = "_static/jquery-1.3.min.js"
 
+data Pipe a = Pipe {
+    fromUI :: Chan a,
+    toUI :: Chan a
+    }
+
+newPipe = do
+    a <- newChan
+    b <- newChan
+    return $ Pipe a b
+
+mainProgram p = looper p 0
+    where
+        looper p c = do
+            let ap = AjaxPacket c c "#ffaaaa" 
+            writeChan (toUI p) ap
+            sleep 1
+            looper p (c+1)
+
 main :: IO ()
 main = do
+    p <- newPipe
+    forkIO (mainProgram p)
     updateGlobalLogger rootLoggerName (setLevel DEBUG)
     let cfg = Conf { validator = Nothing, port = 3333, logAccess = Nothing }
-    simpleHTTP cfg handlerMap
+    simpleHTTP cfg (handlerMap p)
 
-handlerMap :: ServerPartT IO Response
-handlerMap = msum [ 
+handlerMap :: Pipe AjaxPacket -> ServerPartT IO Response
+handlerMap p = msum [ 
     dir "_static" $ uriRest staticFiles,
     dir "_ajax" $ msum [ 
         dir "cell" $ ajaxCell,
-        dir "json" $ ajaxJSON,
+        dir "json" $ ajaxJSON p,
         dir "test" $ ajaxTest 
         ],
     renderHello ]
@@ -67,13 +93,10 @@ ajaxCell :: ServerPartT IO Response
 ajaxCell = do
     makeResponse $ "#ffaaaa"
 
-
-samplePacket :: AjaxPacket 
-samplePacket = AjaxPacket ('#':(cell_id 3 3)) "#ffaaaa"
-
-ajaxJSON :: ServerPartT IO Response
-ajaxJSON = do
-    makeResponse $ toJsonString $ samplePacket
+ajaxJSON :: Pipe AjaxPacket -> ServerPartT IO Response
+ajaxJSON p = do
+    c <- liftIO $ readChan (toUI p)
+    makeResponse $ toJsonString c
 
 makeResponse = ok . setHeader "Content-Type" "text/html" .  toResponse
 
@@ -100,7 +123,8 @@ hello =
                 }
 
                 function processJSON(x) {
-                    $(x.item).css("backgroundColor", x.color);
+                    var id = "#" + x.x + "_" + x.y
+                    $(id).css("backgroundColor", x.color);
                 }
 
                 function requestJSON() {
