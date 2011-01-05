@@ -35,9 +35,7 @@ $(derivePathInfo ''SiteURL)
 
 
 main :: IO ()
-main = do
-    let cfg = Conf { validator = Nothing, port = 3333 }
-    simpleHTTP cfg handlerMap
+main = simpleHTTP nullConf {port = 3333}  handlerMap
 
 
 handlerMap :: ServerPartT IO Response
