@@ -1,5 +1,4 @@
 -- Author: Sergey Mironov
--- See also http://blog.ierton.ru
 
 {-# OPTIONS_GHC -F -pgmF trhsx #-}
 
@@ -8,23 +7,26 @@ import HSP
 import Data.Char
 import HSP.ServerPartT
 import Control.Monad
+import System.Log.Logger
 
 main :: IO ()
-main = simpleHTTP nullConf { port = 3333 }  handlerMap
+main = do
+    updateGlobalLogger rootLoggerName (setLevel DEBUG)
+    simpleHTTP nullConf { port = 3333 }  handlerMap
 
 handlerMap :: ServerPartT IO Response
 handlerMap = msum [ tryCookie, noCookie ] >>= renderPage
 
-cookie = "cookie"
+cookie = "cookie2"
 
-tryCookie =  lookCookieValue cookie >>= return . Just
+tryCookie =  lookCookie cookie >>= return . Just . show
 
 noCookie = addCookie Session (mkCookie cookie "haba-haba") >> return Nothing
 
 renderPage :: Maybe String -> ServerPartT IO Response
 renderPage var = do
-  xhello <- unXMLGenT (hello $ show var)
-  makeResponse xhello
+    xhello <- unXMLGenT (hello $ show var)
+    makeResponse xhello
 
 makeResponse = ok . setHeader "Content-Type" "text/html" . 
   toResponse . renderAsHTML
