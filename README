@@ -1,4 +1,4 @@
-Here I collected a set of small haskell programs illustrating different aspects of
+Meet a set of small haskell programs illustrating different aspects of
 Happstack framework. To build it you will probably need development version of
 happstack. See http://happstack.com/download for detail.
 
